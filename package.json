@@ -9,7 +9,9 @@
     "grunt-contrib-compass": "^1.0.4",
     "grunt-contrib-uglify": "^0.11.0",
     "grunt-contrib-connect": "^0.11.2",
-    "grunt-contrib-requirejs": "^0.4.4"
+    "grunt-contrib-requirejs": "^0.4.4",
+    "grunt-includes": "^0.5.1",
+    "grunt-concurrent": "^2.1.0"
   },
   "private": true
 }

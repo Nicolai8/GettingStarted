@@ -7,6 +7,10 @@ module.exports = function (grunt) {
 			compass: {
 				files: ["**/*.{scss,sass}"],
 				tasks: ["compass:dev"]
+			},
+			includes: {
+				files: ["views/*.html", "include/*.html"],
+				tasks: ["includes:compile"]
 			}
 		},
 		compass: {
@@ -52,6 +56,23 @@ module.exports = function (grunt) {
 					removeCombined: true
 				}
 			}
+		},
+		includes: {
+			compile: {
+				cwd: "views",
+				src: ["*.html"],
+				dest: ".",
+				options: {
+					flatten: true,
+					includePath: "include"
+				}
+			}
+		},
+		concurrent: {
+			options: {
+				logConcurrentOutput: true
+			},
+			default: ["watch:compass", "watch:includes"]
 		}
 	});
 
@@ -60,9 +81,11 @@ module.exports = function (grunt) {
 	grunt.loadNpmTasks("grunt-contrib-compass");
 	grunt.loadNpmTasks("grunt-contrib-uglify");
 	grunt.loadNpmTasks("grunt-contrib-connect");
-	grunt.loadNpmTasks('grunt-contrib-requirejs');
+	grunt.loadNpmTasks("grunt-contrib-requirejs");
+	grunt.loadNpmTasks("grunt-includes");
+	grunt.loadNpmTasks("grunt-concurrent");
 
 	// TASKS
-	grunt.registerTask("default", ["compass:dev", "connect:server", "watch"]);
-	grunt.registerTask("build", ["compass:prod", "requirejs:compile"]);
+	grunt.registerTask("default", ["includes:compile", "compass:dev", "connect:server", "concurrent"]);
+	grunt.registerTask("build", ["compass:prod", "requirejs:compile", "includes:compile"]);
 };
