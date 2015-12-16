@@ -6,26 +6,32 @@ module.exports = function (grunt) {
 		watch: {
 			compass: {
 				files: ["**/*.{scss,sass}"],
-				tasks: ["compass:dev"]
+				tasks: ["compass:default"]
 			},
-			includes: {
-				files: ["views/*.html", "include/*.html"],
-				tasks: ["includes:compile"]
+			includereplace: {
+				files: ["src/views/*.html", "src/include/*.html"],
+				tasks: ["includereplace:default"]
+			},
+			srcJs: {
+				files: ["src/**/*.js"],
+				tasks: ["copy:srcJs"]
 			}
 		},
 		compass: {
-			dev: {
+			default: {
 				options: {
-					sassDir: ["sass/"],
-					cssDir: ["css/"],
+					sassDir: ["src/sass/"],
+					cssDir: ["dist/css/"],
+					sourcemap: true,
 					environment: "development"
 				}
 			},
-			prod: {
+			build: {
 				options: {
-					sassDir: ["sass/"],
-					cssDir: ["css/"],
-					environment: "production"
+					sassDir: ["src/sass/"],
+					cssDir: ["dist/css/"],
+					environment: "production",
+					outputStyle: "compressed"
 				}
 			}
 		},
@@ -33,46 +39,94 @@ module.exports = function (grunt) {
 			server: {
 				options: {
 					port: 1414,
-					base: "."
+					base: "dist/"
 				}
 			}
 		},
 		requirejs: {
-			compile: {
+			build: {
 				options: {
-					baseUrl: "js/",
+					baseUrl: "src/js/",
 					paths: {
-						"jquery": "../bower_components/jquery/dist/jquery",
-						"bootstrap": "../bower_components/bootstrap/dist/js/bootstrap.js"
+						"jquery": "../../bower_components/jquery/dist/jquery",
+						"bootstrap": "../../bower_components/bootstrap-sass/assets/javascripts/bootstrap"
 					},
 					shim: {
 						"bootstrap": {
 							deps: ["jquery"]
 						}
 					},
-					mainConfigFile: "js/main.js",
+					mainConfigFile: "src/js/main.js",
 					name: "main",
-					out: "js/main.min.js",
+					out: "dist/js/main.min.js",
 					removeCombined: true
 				}
 			}
 		},
-		includes: {
-			compile: {
-				cwd: "views",
-				src: ["*.html"],
-				dest: ".",
+		includereplace: {
+			default: {
 				options: {
-					flatten: true,
-					includePath: "include"
-				}
+					globals: {
+						build: ""
+					},
+					includesDir: "src/include"
+				},
+				src: "*.html",
+				dest: "dist/",
+				expand: true,
+				cwd: "src/"
+			},
+			build: {
+				options: {
+					globals: {
+						build: ".min"
+					},
+					includesDir: "src/include"
+				},
+				src: "*.html",
+				dest: "dist/",
+				expand: true,
+				cwd: "src/"
 			}
 		},
 		concurrent: {
 			options: {
 				logConcurrentOutput: true
 			},
-			default: ["watch:compass", "watch:includes"]
+			default: ["watch:compass", "watch:includereplace", "watch:srcJs"]
+		},
+		copy: {
+			default: {
+				files: [{
+					expand: true,
+					cwd: "bower_components/requirejs/",
+					src: ["require.js"],
+					dest: "dist/js"
+				}, {
+					expand: true,
+					cwd: "bower_components/bootstrap-sass/assets/fonts/bootstrap",
+					src: ["*"],
+					dest: "dist/fonts"
+				}]
+
+			},
+			srcJs: {
+				expand: true,
+				cwd: "src/js",
+				src: ["**/*.js"],
+				dest: "dist/js"
+			},
+			bowerComponents: {
+				expand: true,
+				cwd: "bower_components",
+				src: ["**/*"],
+				dest: "dist/bower_components"
+			}
+		},
+		clean: {
+			default: {
+				src: ["dist/**/*"]
+			}
 		}
 	});
 
@@ -82,10 +136,12 @@ module.exports = function (grunt) {
 	grunt.loadNpmTasks("grunt-contrib-uglify");
 	grunt.loadNpmTasks("grunt-contrib-connect");
 	grunt.loadNpmTasks("grunt-contrib-requirejs");
-	grunt.loadNpmTasks("grunt-includes");
+	grunt.loadNpmTasks("grunt-include-replace");
 	grunt.loadNpmTasks("grunt-concurrent");
+	grunt.loadNpmTasks("grunt-contrib-copy");
+	grunt.loadNpmTasks("grunt-contrib-clean");
 
 	// TASKS
-	grunt.registerTask("default", ["includes:compile", "compass:dev", "connect:server", "concurrent"]);
-	grunt.registerTask("build", ["compass:prod", "requirejs:compile", "includes:compile"]);
+	grunt.registerTask("default", ["clean", "includereplace:default", "compass:default", "copy:bowerComponents", "copy:default", "copy:srcJs", "connect:server", "concurrent"]);
+	grunt.registerTask("build", ["clean", "compass:build", "requirejs:build", "includereplace:build", "copy:default"]);
 };
